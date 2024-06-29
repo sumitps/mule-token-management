@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="fetch-alation-access-token" doc:id="69d3468c-8d79-4c9f-b2c6-b9b6a67fd5b9" >
+		<ee:cache doc:name="Cache Access Token" doc:id="ebb788fb-2112-4803-a2b8-40630bc8bf11" cachingStrategy-ref="Alation_Access_Token_Caching_Strategy" >
+			<flow-ref doc:name="fetch-alation-refresh-token" doc:id="2d7a429e-0ed1-4307-8e86-75587be8c8ad" name="fetch-alation-refresh-token" target="refreshToken"/>
+			<ee:transform doc:name="Map Request Body" doc:id="aa5c1c77-b28b-4c5c-87dd-9e9b4a989249" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "refresh_token": vars.refreshToken,
+    "user_id": Mule::p('alation.userId')
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<http:request method="POST" doc:name="Get Access Token" doc:id="fbae37da-9ffa-457f-ab10-be52b0401be8" config-ref="Alation_HTTP_Request_configuration" path="${alation.paths.accessToken}" />
+			<ee:transform doc:name="Map Access Token" doc:id="ad148aa8-7305-4bc3-915e-285f7cce5363" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.api_access_token]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</ee:cache>
+	</sub-flow>
+	<sub-flow name="fetch-alation-refresh-token" doc:id="1e20c65c-351c-42ee-b374-80e0756e2ed8" >
+		<ee:cache doc:name="Cache Refresh Token" doc:id="ecef555f-d539-48b7-84e1-41fae17755f2" cachingStrategy-ref="Alation_Refresh_Token_Caching_Strategy" >
+			<ee:transform doc:name="Map Request Body" doc:id="51771089-ea3b-40b1-b6b1-766a3c06345e" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "username": Mule::p('secure::alation.username'), 
+    "password": Mule::p('secure::alation.password'), 
+    "name": "alationMuleToken"
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<http:request method="POST" doc:name="Get RefreshToken" doc:id="fb4050c9-ae57-418e-9df3-66e8d8414fd1" config-ref="Alation_HTTP_Request_configuration" path="${alation.paths.refreshToken}" />
+			<ee:transform doc:name="Map Refresh Token" doc:id="953b802a-ea8c-410f-bf5a-b9362c98bab2" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.refresh_token]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</ee:cache>
+	</sub-flow>
+</mule>

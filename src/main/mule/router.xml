@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	
+	
+	<file:config name="File_Config" doc:name="File Config" doc:id="ac1d7373-a090-4d9f-b61f-acacee058603" >
+		<file:connection workingDir="C:\Users\sumit\Downloads\alation-py" />
+	</file:config>
+	<flow name="update-custom-field-timestamp-flow" doc:id="a8fdea14-8cdb-43a6-bf8a-9fdc227e02eb" >
+		<http:listener doc:name="Listener" doc:id="6631df01-7864-4c51-8568-0c9f50be2b0f" config-ref="HTTP_Listener_config" path="/timestamp" allowedMethods="PATCH"/>
+		<flow-ref doc:name="fetch-alation-access-token" doc:id="3322b77b-2345-46b0-ac09-cfbf7d37ee0e" name="fetch-alation-access-token" target="accessToken"/>
+		<file:read doc:name="Read CSV File" doc:id="38837aed-c2b4-40df-aa81-6337ca4482cc" config-ref="File_Config" path="alation.csv" outputMimeType="application/csv"/>
+		<ee:transform doc:name="Map Update Request" doc:id="ad8d26c0-fe0e-45a3-b1f6-499c3d4ec0e9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ((item, index) -> {
+    "field_id": 10011,
+    "value": item.value,
+    "otype": "table",
+    "oid": item.oid
+  })]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="PUT" doc:name="Post Custom Field Data" doc:id="349c358d-4ccf-48a6-845a-dbe14622f6b3" config-ref="Alation_HTTP_Request_configuration" path="${alation.paths.asyncUpdate}">
+			<http:body ><![CDATA[#[%dw 2.0
+output application/json
+---
+payload]]]></http:body>
+			<http:headers ><![CDATA[#[output application/json
+---
+{
+	"accept": "application/json",
+	"Content-Type": "application/json",
+	"token" : vars.accessToken
+}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Log Final Response" doc:id="b19bc83d-644f-466f-8b59-7f997e704392" message="#[payload]"/>
+	</flow>
+
+</mule>

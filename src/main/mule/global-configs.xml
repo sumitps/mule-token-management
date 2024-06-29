@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:dynamodb="http://www.mulesoft.org/schema/mule/dynamodb"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/dynamodb http://www.mulesoft.org/schema/mule/dynamodb/current/mule-dynamodb.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="27c562e3-151c-4025-93d8-550e7aa247e0">
+		<http:listener-connection host="0.0.0.0" port="8081">
+		</http:listener-connection>
+	</http:listener-config>
+	<http:request-config name="Alation_HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="059ea23c-f40f-486a-8f04-276c77b747fc">
+		<http:request-connection host="${alation.http.host}" port="${alation.http.port}" protocol="HTTPS"/>
+	</http:request-config>
+	<os:config name="ObjectStore_Config" doc:name="ObjectStore Config" doc:id="c6fdaefc-9899-4c7e-8fbe-818d95472575" >
+		<os:connection />
+	</os:config>
+	<ee:object-store-caching-strategy name="Alation_Refresh_Token_Caching_Strategy" doc:name="Caching Strategy" doc:id="a5ebe936-76f4-47ea-b4bc-75848e58a914" keyGenerationExpression="alationRefreshToken" >
+		<os:private-object-store alias="Alation_Token_Store" entryTtl="58" entryTtlUnit="DAYS" expirationIntervalUnit="DAYS" config-ref="ObjectStore_Config" />
+	</ee:object-store-caching-strategy>
+	<ee:object-store-caching-strategy name="Alation_Access_Token_Caching_Strategy" doc:name="Caching Strategy" doc:id="78c3a419-26a0-46f8-a775-5cdb01de8f99" keyGenerationExpression="alationAccessToken" >
+		<os:private-object-store alias="Alation_Access_Token_Store" entryTtl="22" entryTtlUnit="HOURS" expirationIntervalUnit="HOURS" config-ref="ObjectStore_Config" />
+	</ee:object-store-caching-strategy>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="4e8b265a-99ed-427d-a055-6ec80b055d31" file="${mule.env}-secure-properties.yaml" key="${mule.key}" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+</mule>
